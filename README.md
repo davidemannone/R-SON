@@ -15,7 +15,7 @@ See http://www.JSON.org/
 
 The files in this collection implement JSON encoders/decoders in JavaScript 
 with this features:
-1. serializes any king of JavaScript cyclic object, including arrays
+1. serializes any kind of JavaScript cyclic object, including arrays
 2. deseriliazes any standard JSON and any Reflection decycled object by 
    retrocycling, including arrays 
 3. serializes/deserializes JavaScript standard Date and RegExp
