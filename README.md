@@ -11,7 +11,7 @@ JSON is a light-weight, language independent, data interchange format.
 See http://www.JSON.org/
 
 
-* Description *
+* Feature *
 
 The files in this collection implement JSON encoders/decoders in JavaScript 
 with this features:
@@ -22,6 +22,8 @@ with this features:
 4. Retypes/Reprototypes any user defined JavaScript object
 5. use of standard JSON.stringify and JSON.parse and works with any
 6. written in strong typed TypeScript
+
+* Description *
 
 1. By including the Reflection.js file in your code you will be be able to:
 1.1 serialize any cyclic object with any property type with: 
