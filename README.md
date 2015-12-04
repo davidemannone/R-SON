@@ -10,6 +10,9 @@ davidemannone@hotmail.com
 JSON is a light-weight, language independent, data interchange format.
 See http://www.JSON.org/
 
+
+* Description *
+
 The files in this collection implement JSON encoders/decoders in JavaScript 
 with this features:
 1. serializes any king of JavaScript cyclic object, including arrays
@@ -54,6 +57,17 @@ with this features:
 6. You can get the class/protoype name by calling:
    Reflection.getClassName(anyObject);
 
+7. NO USE OF EVAL!
+
+8. The code is written with performance and reducing resource use in mind. 
+
+9. Qunit Test code is provided.
+
+
+
+
+* API *
+
 The full TypeScript API is:
 Reflection.js
   System.
@@ -74,3 +88,77 @@ Reflection.js
       chacheNameSpace(...dotStringPathsToFunctions)
       chacheTypes(...prototype)  // returns class name
       getClassName(obj)  // returns class name
+
+
+* Examples *
+
+** TypeScript use example **
+// define any your object
+module A.B.C {
+   public class MyClass {
+      public a: number = 0;
+      public b: string = "hello R-SON";
+      public c: RegExp = /R-SON/g;
+      public d: MyClass = null;
+      public e: Date[] = [new Date(), new Date()];
+      public f: MyClass[] = [new MyClass()];
+      public g: {
+         a: string = "any object";
+      }
+   }
+}
+
+...anywhere in your code...
+var MyObj = new A.B.C.MyClass();
+MyObj.d = MyObj;
+MyObj.f.push(MyObj);
+var s = System.Reflection.serialize(MyObj, "A.B.C");
+var myobj = System.Reflection.deserialize(s);
+
+...or also anywhere in your code...
+var MyObj = new A.B.C.MyClass();
+MyObj.d = MyObj;
+MyObj.f.push(MyObj);
+System.Reflection.cacheNameSpaces("a.b.c");
+....
+
+var s = System.Reflection.serialize(MyObj);
+var myobj = System.Reflection.deserialize(s);
+
+** JavaScript use example **
+// define any your object
+function A {
+   function B {
+      function C {
+         function MyClass = {
+            this.a = 0;
+            this.b = "hello R-SON";
+            this.c = /R-SON/g;
+            this.d = null;
+            this.e = [new Date(), new Date()];
+            this.f: = [new MyClass()];
+            this.g: {
+               a: = "any object";
+            }
+         }
+      }
+   }
+}
+
+...anywhere in your code...
+var MyObj = new A.B.C.MyClass();
+MyObj.d = MyObj;
+MyObj.f.push(MyObj);
+var s = System.Reflection.serialize(MyObj, "A.B.C");
+var myobj = System.Reflection.deserialize(s);
+
+...or also anywhere in your code...
+var MyObj = new A.B.C.MyClass();
+MyObj.d = MyObj;
+MyObj.f.push(MyObj);
+System.Reflection.cacheNameSpaces("a.b.c");
+....
+
+var s = System.Reflection.serialize(MyObj);
+var myobj = System.Reflection.deserialize(s);
+
