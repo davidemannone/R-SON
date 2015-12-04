@@ -8,7 +8,7 @@ module System {
 
   export class Reflection {
     // cached module names and types
-    private static cachedNameSpaces: IHashTable<Function> = {}; // IHashtable<String, String[]> = new Hashtable(;
+    private static cachedNameSpaces: IHashTable<Function> = {}; 
     private static cachedTypes: IHashTable<any> = {};
 
     // does caching of module names
