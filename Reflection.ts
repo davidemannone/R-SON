@@ -109,12 +109,12 @@ module System {
     // does decycling
     private static seq: number = 0;
     private static decycle(value: any, ret: any = null, map: any[] = [], keys: string[] = [], lastname: string = ".", seq: number = 0): any {
-      if (value)
+      if (value && typeof value == 'object')
         if (value instanceof Date)
           return { $date: value.toJSON() };
         else if (value instanceof RegExp)
           return { $regex: value.toString() };
-        else if (typeof value == 'object') {
+        else {
           if (ret == null) {
             Reflection.seq = -1;
             if (value instanceof Array)
@@ -136,15 +136,15 @@ module System {
 
               for (var i = 0, len_i = <number>value.length; i < len_i; i++) {
                 var value_i = value[i];
-                if (value_i)
+                if (value_i && typeof value_i == "object")
                   if (value_i instanceof Date)
                     ret[i] = { $date: value_i.toJSON() };
                   else if (value instanceof RegExp)
                     ret[i] = { $regex: value_i.toString() };
-                  else if (typeof value_i == "object")
-                    ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
                   else
-                    ret.push(value_i);
+                    ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
+                else
+                  ret.push(value_i);
               }
             }
           }
@@ -158,15 +158,15 @@ module System {
 
             for (var name in value) {
               var property = value[name];
-              if (property)
+              if (property && typeof property == "object")
                 if (property instanceof Date)
                   ret[name] = { $date: property.toJSON() };
                 else if (property instanceof RegExp)
                   ret[name] = { $regex: property.toString() };
-                else if (typeof property == "object")
-                  ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
                 else
-                  ret[name] = property;
+                  ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
+              else
+                ret[name] = property;
             }
           }
           return ret;
