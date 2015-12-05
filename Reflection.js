@@ -103,12 +103,12 @@ var System;
             if (keys === void 0) { keys = []; }
             if (lastname === void 0) { lastname = "."; }
             if (seq === void 0) { seq = 0; }
-            if (value)
+            if (value && typeof value == 'object')
                 if (value instanceof Date)
                     return { $date: value.toJSON() };
                 else if (value instanceof RegExp)
                     return { $regex: value.toString() };
-                else if (typeof value == 'object') {
+                else {
                     if (ret == null) {
                         Reflection.seq = -1;
                         if (value instanceof Array)
@@ -127,15 +127,15 @@ var System;
                             keys.push(seq + '.' + lastname);
                             for (var i = 0, len_i = value.length; i < len_i; i++) {
                                 var value_i = value[i];
-                                if (value_i)
+                                if (value_i && typeof value_i == "object")
                                     if (value_i instanceof Date)
                                         ret[i] = { $date: value_i.toJSON() };
                                     else if (value instanceof RegExp)
                                         ret[i] = { $regex: value_i.toString() };
-                                    else if (typeof value_i == "object")
-                                        ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
                                     else
-                                        ret.push(value_i);
+                                        ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
+                                else
+                                    ret.push(value_i);
                             }
                         }
                     }
@@ -148,15 +148,15 @@ var System;
                             ret["$type"] = vp;
                         for (var name in value) {
                             var property = value[name];
-                            if (property)
+                            if (property && typeof property == "object")
                                 if (property instanceof Date)
                                     ret[name] = { $date: property.toJSON() };
                                 else if (property instanceof RegExp)
                                     ret[name] = { $regex: property.toString() };
-                                else if (typeof property == "object")
-                                    ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
                                 else
-                                    ret[name] = property;
+                                    ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
+                            else
+                                ret[name] = property;
                         }
                     }
                     return ret;
