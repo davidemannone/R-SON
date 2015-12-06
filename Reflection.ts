@@ -12,7 +12,7 @@ module System {
     private static cachedTypes: IHashTable<any> = {};
 
     // does caching of module names
-    public static cacheNameSpaces(...namespaces: string[]): void {
+    public static cacheNameSpace(...namespaces: string[]): void {
       for (var i = 0, len_i = namespaces.length; i < len_i; i++) {
         var elem = namespaces[i];
         if (elem in Reflection.cachedNameSpaces)
@@ -103,7 +103,7 @@ module System {
 
     // serializes an object by using JSON
     public static serialize(obj: any, ...namespaces: string[]): string {
-      Reflection.cacheNameSpaces.apply(this, namespaces);
+      Reflection.cacheNameSpace.apply(this, namespaces);
       return JSON.stringify(Reflection.decycle(obj));
     }
     // does decycling
@@ -178,7 +178,7 @@ module System {
 
     // does deserializing by using JSON
     public static deserialize(s: string, ...namespaces: string[]): any {
-      Reflection.cacheNameSpaces.apply(this, namespaces);
+      Reflection.cacheNameSpace.apply(this, namespaces);
       return Reflection.retrocycle(JSON.parse(s, (k, v) => {
         if (v && typeof v == "object")
           if (v.$type) {  // && !(v instanceof Array)
