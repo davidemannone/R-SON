@@ -11,7 +11,8 @@ module NameSpace {
     public RegEx: RegExp;
     public Class: Class = null;
     public Array: Class[] = [];
-    constructor(s: string, d: Date, r: RegExp) { this.Name = s; this.Date = d; this.RegEx = r; }
+    public $NotSerialized: string = "NotSerialized";
+    constructor(s: string, d: Date, r: RegExp) { this.Name = s; this.Date = d; this.RegEx = r; this.$NotSerialized = s; }
   }
 }
 
@@ -102,6 +103,7 @@ test('serializer simple classes', () => {
   c1.Array = [c3];
   equal(c1.Class, c2, "same class obj");
   equal(c1.Array[0], c3, "same class obj array");
+  equal(c1.$NotSerialized, c1.Name, "same class obj");
 
   var mySerialized = System.Reflection.serialize(c1, "NameSpace");
   notEqual(mySerialized.length, 0, "my serialized");
@@ -112,6 +114,7 @@ test('serializer simple classes', () => {
   notEqual(myDeserialized, myDeserialized.Class, "differnet class obj 1");
   notEqual(myDeserialized, myDeserialized.Array[0], "differnet class obj 2");
   notEqual(myDeserialized.Class, myDeserialized.Array[0], "differnet class obj 3");
+  equal(myDeserialized.$NotSerialized, undefined, "not serialized");
 
   c1 = new NameSpace.Class("c1", date, regex);
   c2 = new NameSpace.Class("c2", date, regex);
