@@ -103,7 +103,7 @@ test('serializer simple classes', () => {
   c1.Array = [c3];
   equal(c1.Class, c2, "same class obj");
   equal(c1.Array[0], c3, "same class obj array");
-  equal(c1.$NotSerialized, c1.Name, "same class obj");
+  equal(c1.$NotSerialized, c1.Name, "same not to serialize property");
 
   var mySerialized = System.Reflection.serialize(c1, "NameSpace");
   notEqual(mySerialized.length, 0, "my serialized");
