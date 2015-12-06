@@ -156,18 +156,19 @@ module System {
             if (vp)
               ret["$type"] = vp;
 
-            for (var name in value) {
-              var property = value[name];
-              if (property && typeof property == "object")
-                if (property instanceof Date)
-                  ret[name] = { $date: property.toJSON() };
-                else if (property instanceof RegExp)
-                  ret[name] = { $regex: property.toString() };
+            for (var name in value) 
+              if (name[0] != '$') {
+                var property = value[name];
+                if (property && typeof property == "object")
+                  if (property instanceof Date)
+                    ret[name] = { $date: property.toJSON() };
+                  else if (property instanceof RegExp)
+                    ret[name] = { $regex: property.toString() };
+                  else
+                    ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
                 else
-                  ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
-              else
-                ret[name] = property;
-            }
+                  ret[name] = property;
+              }
           }
           return ret;
         }
