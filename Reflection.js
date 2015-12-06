@@ -130,7 +130,7 @@ var System;
                                 if (value_i && typeof value_i == "object")
                                     if (value_i instanceof Date)
                                         ret[i] = { $date: value_i.toJSON() };
-                                    else if (value instanceof RegExp)
+                                    else if (value_i instanceof RegExp)
                                         ret[i] = { $regex: value_i.toString() };
                                     else
                                         ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
