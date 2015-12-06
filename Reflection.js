@@ -4,7 +4,7 @@ var System;
         function Reflection() {
         }
         // PUBLIC: caching of function paths
-        Reflection.cacheNameSpaces = function () {
+        Reflection.cacheNameSpace = function () {
             var namespaces = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 namespaces[_i - 0] = arguments[_i];
@@ -93,7 +93,7 @@ var System;
             for (var _i = 1; _i < arguments.length; _i++) {
                 namespaces[_i - 1] = arguments[_i];
             }
-            Reflection.cacheNameSpaces.apply(this, namespaces);
+            Reflection.cacheNameSpace.apply(this, namespaces);
             return JSON.stringify(Reflection.decycle(obj));
         };
         // PRIVATE: decycles an object
@@ -170,7 +170,7 @@ var System;
             for (var _i = 1; _i < arguments.length; _i++) {
                 namespaces[_i - 1] = arguments[_i];
             }
-            Reflection.cacheNameSpaces.apply(this, namespaces);
+            Reflection.cacheNameSpace.apply(this, namespaces);
             return Reflection.retrocycle(JSON.parse(s, function (k, v) {
                 if (v && typeof v == "object")
                     if (v.$type) {
