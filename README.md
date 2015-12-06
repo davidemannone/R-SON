@@ -20,7 +20,7 @@ with this features:
    retrocycling, including arrays 
 3. serializes/deserializes JavaScript standard Date and RegExp
 4. Retypes/Reprototypes any user defined JavaScript object
-5. use of standard JSON.stringify and JSON.parse and works with any
+5. use of standard JSON.stringify and JSON.parse
 6. written in strong typed TypeScript
 
 * Description *
@@ -57,13 +57,16 @@ with this features:
       System.Reflection.cacheTypes(...classesOrFunctionName)
 
 6. You can get the class/protoype name by calling:
-   Reflection.getClassName(anyObject);
+   System.Reflection.getClassName(anyObject);
 
-7. NO USE OF EVAL!
+7. To avoid serialization of object properties start their name with a
+   '$' character. Example: $NotSerialized = "anyValueyouWant"
 
-8. The code is written with performance and reducing resource use in mind. 
+8. NO USE OF EVAL!
 
-9. Qunit Test code is provided.
+9. The code is written with performance and reducing resource use in mind. 
+
+10. Qunit Test code is provided.
 
 
 
@@ -77,7 +80,7 @@ Reflection.js
       serialize(obj: any, ...namespaces: string[]): string  // returns JSON
       deserialize(s: string, ...namespaces: string[]): any  // returns Object
       chacheNameSpace(...namespaces: string[])
-      chacheTypes(...prototype: any): string  // returns class name
+      chacheType(...prototype: any): string  // returns class name
       getClassName(obj: any): string  // returns class name
     
     
@@ -88,9 +91,9 @@ Reflection.js
       serialize(obj, ...dotStringPathsToFunctions)  // returns JSON
       deserialize(s, ...dotStringPathsToFunctions)  // returns Object with prototype set
       chacheNameSpace(...dotStringPathsToFunctions)
-      chacheTypes(...prototype)  // returns class name
+      chacheType(...prototype)  // returns class name
       getClassName(obj)  // returns class name
-
+ 
 
 * Examples *
 
@@ -107,6 +110,7 @@ module A.B.C {
       public g: {
          a: string = "any object";
       }
+      private $DoNotSerialize: string = "NotSerialized";
    }
 }
 
@@ -121,7 +125,7 @@ var myobj = System.Reflection.deserialize(s);
 var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
-System.Reflection.cacheNameSpaces("a.b.c");
+System.Reflection.cacheNameSpace("A.B.C");
 ....
 
 var s = System.Reflection.serialize(MyObj);
@@ -142,25 +146,30 @@ function A {
             this.g: {
                a: = "any object";
             }
+            this.$DoNotSerialize = "NotSerialized";
          }
       }
    }
 }
 
-...anywhere in your code...
+// BEGIN EXAMPLE1: anywhere in your code...
 var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
 var s = System.Reflection.serialize(MyObj, "A.B.C");
 var myobj = System.Reflection.deserialize(s);
+// END EXAMPLE1
 
-...or also anywhere in your code...
+
+
+// BEGIN EXAMPLE2: or also anywhere in your code...
 var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
 System.Reflection.cacheNameSpaces("a.b.c");
-....
+
+//....any other code
 
 var s = System.Reflection.serialize(MyObj);
 var myobj = System.Reflection.deserialize(s);
-
+// END EXAMPLE2
