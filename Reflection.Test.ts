@@ -1,4 +1,4 @@
-// your reference paths to *.ts
+/// <reference path="../_references.ts" />
 
 
 QUnit.module('Reflection');
@@ -15,6 +15,23 @@ module NameSpace {
     constructor(s: string, d: Date, r: RegExp) { this.Name = s; this.Date = d; this.RegEx = r; this.$NotSerialized = s; }
   }
 }
+
+test('standard JSON', () => {
+  var json = { str: "ciao", num: 1, array: [1, "ciao", { str: "ciao" }, [1, "ciao"], null ],  obj: {str: "ciao", num: 1}, null: null };
+  var myDeserializedJSON = <any>System.Reflection.deserialize(JSON.stringify(json));
+  equal(myDeserializedJSON.str, json.str, "my deserialized JSON string");
+  equal(myDeserializedJSON.num, json.num, "my deserialized JSON number");
+  equal(myDeserializedJSON.array.length, json.array.length, "my deserialized JSON array");
+  equal(myDeserializedJSON.array[0], json.array[0], "my deserialized JSON array number");
+  equal(myDeserializedJSON.array[1], json.array[1], "my deserialized JSON array string");
+  equal(myDeserializedJSON.array[2].str, (<any>json.array[2]).str, "my deserialized JSON array object string");
+  equal(myDeserializedJSON.array[3][0], json.array[3][0], "my deserialized JSON array array number");
+  equal(myDeserializedJSON.array[3][1], json.array[3][1], "my deserialized JSON array array string");
+  equal(myDeserializedJSON.array[4], json.array[4], "my deserialized JSON array null");
+  equal(myDeserializedJSON.obj.str, json.obj.str, "my deserialized JSON object string");
+  equal(myDeserializedJSON.obj.num, json.obj.num, "my deserialized JSON object number");
+  equal(myDeserializedJSON.null, json.null, "my deserialized JSON null");
+});
 
 test('not objects', () => {
   var s = "ciao";
@@ -54,8 +71,19 @@ test('not objects', () => {
   var nil = null;
   mySerialized = System.Reflection.serialize(nil);
   notEqual(mySerialized.length, 0, "my serialized null");
-  var myDeserializedNil = <RegExp>System.Reflection.deserialize(mySerialized);
+  var myDeserializedNil = <any>System.Reflection.deserialize(mySerialized);
   equal(myDeserializedNil, nil, "my deserialized regula null");
+
+  var undef = undefined;
+  mySerialized = System.Reflection.serialize(undef);
+  equal(mySerialized, undefined, "my serialized undefined not included");
+
+  System.Reflection.IncludeUndefined = true;
+  mySerialized = System.Reflection.serialize(undef);
+  notEqual(mySerialized.length, 0, "my serialized undefined");
+  var myDeserializedUndefined = <any>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedUndefined, undef, "my deserialized regula undefined");
+  System.Reflection.IncludeUndefined = false;
 
 });
 
@@ -88,8 +116,73 @@ test('arrays', () => {
   equal(myDeserializedRegExp[0].toString(), r[0].toString(), "my deserialized regular expression 0");
   equal(myDeserializedRegExp[1].toString(), r[1].toString(), "my deserialized regular expression 1");
 
-});
+  var ss = [s, ["ciao2", "miao2"]];
+  var mySerialized = System.Reflection.serialize(ss);
+  notEqual(mySerialized.length, 0, "my serialized string");
+  var myDeserializedString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString[0][0], s[0], "my deserialized string 0");
+  equal(myDeserializedString[0][1], s[1], "my deserialized string 0");
+  equal(myDeserializedString[1][0], ss[1][0], "my deserialized string 1");
+  equal(myDeserializedString[1][1], ss[1][1], "my deserialized string 1");
+  
+  var sss = [s, ["ciao2", "miao2"], s[0]];
+  var mySerialized = System.Reflection.serialize(sss);
+  notEqual(mySerialized.length, 0, "my serialized string");
+  var myDeserializedString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString[0][0], s[0], "my deserialized string 0");
+  equal(myDeserializedString[0][1], s[1], "my deserialized string 0");
+  equal(myDeserializedString[1][0], sss[1][0], "my deserialized string 1");
+  equal(myDeserializedString[1][1], sss[1][1], "my deserialized string 1");
+  equal(myDeserializedString[2], sss[0][0], "my deserialized string 1");
+  
+  ss = [s, [s[1], "miao2"]];
+  var mySerialized = System.Reflection.serialize(ss);
+  notEqual(mySerialized.length, 0, "my serialized string");
+  var myDeserializedString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString[0][0], s[0], "my deserialized string 0");
+  equal(myDeserializedString[0][1], s[1], "my deserialized string 0");
+  equal(myDeserializedString[1][0], ss[0][1], "my deserialized string 1");
+  equal(myDeserializedString[1][1], ss[1][1], "my deserialized string 1");
 
+  var ssss = [s, ["ciao2", s], s];
+  var mySerialized = System.Reflection.serialize(ssss);
+  notEqual(mySerialized.length, 0, "my serialized string");
+  var myDeserializedString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString[0][0], s[0], "my deserialized string 0");
+  equal(myDeserializedString[0][1], s[1], "my deserialized string 0");
+  equal(myDeserializedString[1][0], ssss[1][0], "my deserialized string 1");
+  equal(myDeserializedString[1][1], myDeserializedString[0], "my deserialized string 1");
+  equal(myDeserializedString[2], myDeserializedString[0], "my deserialized string 1");
+  
+  var sssss = [["1",["2",[[s, "4"],"3"]]], ["ciao2", s], s];
+  var mySerialized = System.Reflection.serialize(sssss);
+  notEqual(mySerialized.length, 0, "my serialized string");
+  var myDeserializedString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString[0][0], sssss[0][0], "my deserialized string 0");
+  equal(myDeserializedString[0][1][0], sssss[0][1][0], "my deserialized string 0");
+  equal(myDeserializedString[0][1][1][0][0][0], s[0], "my deserialized string 0");
+  equal(myDeserializedString[0][1][1][0][0][1], s[1], "my deserialized string 0");
+  equal(myDeserializedString[0][1][1][0][1], sssss[0][1][1][0][1], "my deserialized string 0");
+  equal(myDeserializedString[0][1][1][1], sssss[0][1][1][1], "my deserialized string 0");
+  equal(myDeserializedString[1][0], sssss[1][0], "my deserialized string 1");
+  equal(myDeserializedString[1][1], myDeserializedString[0][1][1][0][0], "my deserialized string 1");
+  equal(myDeserializedString[2], myDeserializedString[0][1][1][0][0], "my deserialized string 1");
+
+  s = [undefined, "ciao", undefined];
+  mySerialized = System.Reflection.serialize(s);
+  notEqual(mySerialized.length, 0, "my serialized undefined array no undefined");
+  var myDeserializedRegString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedRegString[0], s[1], "my deserialized regular expression 0");
+
+  System.Reflection.IncludeUndefined = true;
+  mySerialized = System.Reflection.serialize(s);
+  notEqual(mySerialized.length, 0, "my serialized undefined undefined array");
+  myDeserializedRegString = <string[]>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedRegString[0], s[0], "my deserialized regular expression 0");
+  equal(myDeserializedRegString[1], s[1], "my deserialized regular expression 0");
+  equal(myDeserializedRegString[2], s[2], "my deserialized regular expression 0");
+  System.Reflection.IncludeUndefined = false;
+});
 
 test('serializer simple classes', () => {
 
@@ -145,7 +238,7 @@ test('serializer simple classes', () => {
   equal(c1.Class, c2, "c1 == c2");
   equal(c1.Array[0], c3, "same class obj array 3");
   equal(c1.Array, c2.Array, "same array");
-  
+
   mySerialized = System.Reflection.serialize(c1, "NameSpace");
   notEqual(mySerialized.length, 0, "my serialized");
   myDeserialized = <NameSpace.Class>System.Reflection.deserialize(mySerialized);
@@ -155,6 +248,24 @@ test('serializer simple classes', () => {
   notEqual(myDeserialized, myDeserialized.Class, "differnet class obj 1");
   notEqual(myDeserialized, myDeserialized.Array[0], "differnet class obj 2");
   equal(myDeserialized.Array, myDeserialized.Class.Array, "same class obj 3");
+
+  c2.Class = undefined;
+  c3.Class = undefined;
+  
+  System.Reflection.IncludeUndefined = true;
+  mySerialized = System.Reflection.serialize(c1, "NameSpace");
+  notEqual(mySerialized.length, 0, "my serialized");
+  myDeserialized = <NameSpace.Class>System.Reflection.deserialize(mySerialized);
+  equal(myDeserialized.Name, "c1", "my deserialized");
+  equal(myDeserialized.Date.toString(), date.toString(), "my deserialized data");
+  equal(myDeserialized.RegEx.toString(), regex.toString(), "my deserialized regular expression");
+  notEqual(myDeserialized, myDeserialized.Class, "differnet class obj 1");
+  notEqual(myDeserialized, myDeserialized.Array[0], "differnet class obj 2");
+  equal(myDeserialized.Array, myDeserialized.Class.Array, "same class obj 3");
+  equal(myDeserialized.Class.Class, c2.Class, "undefined");
+  equal(myDeserialized.Array[0].Class, c3.Class, "undefined");
+  System.Reflection.IncludeUndefined = false;
+
 
   ok(true);
 });
@@ -174,7 +285,7 @@ test('serializer simple classes from serialized', () => {
   notEqual(mySerialized.length, 0, "my serialized");
 
   var xxx: any = System.Reflection;
-  xxx.cachedTypes = { };
+  xxx.cachedTypes = {};
 
 
   var myDeserialized = <NameSpace.Class>System.Reflection.deserialize(mySerialized);
@@ -220,7 +331,7 @@ test('serializer simple classes from serialized', () => {
   notEqual(mySerialized.length, 0, "my serialized");
 
   xxx.cachedTypes = {};
- 
+
   myDeserialized = <NameSpace.Class>System.Reflection.deserialize(mySerialized);
   equal(myDeserialized.Name, "c1", "my deserialized");
   equal(myDeserialized.Date.toString(), date.toString(), "my deserialized data");
@@ -231,9 +342,6 @@ test('serializer simple classes from serialized', () => {
 
   ok(true);
 });
-
-
-
 
 test('array of arrays', () => {
   var date = new Date();
@@ -254,7 +362,7 @@ test('array of arrays', () => {
   equal(myDeserialized.Name, "1", "my deserialized 1");
   equal(myDeserialized.Date.toString(), date.toString(), "my deserialized data");
   equal(myDeserialized.RegEx.toString(), regex.toString(), "my deserialized regular expression");
-  
+
   notEqual(myDeserialized.Class, null, "null");
   equal(myDeserialized.Array[0], myDeserialized.Class.Array[0], "1");
   equal(myDeserialized.Array[1], myDeserialized.Class.Array[2], "2");
@@ -263,6 +371,135 @@ test('array of arrays', () => {
   equal(myDeserialized.Array[2][1], myDeserialized.Class.Array[2], "5");
 
   ok(true);
+});
+
+
+test('callbacks', () => {
+  //ok(true); return;
+  var s = "ciao";
+  var mySerialized = System.Reflection.serialize(s, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, s, "top value");
+  });
+  notEqual(mySerialized.length, 0, "my serialized callaback in serialize  with same value");
+  var myDeserializedString = <string>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString, s, "my deserialized callback in serialize  with same");
+  
+  mySerialized = System.Reflection.serialize(s, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, s, "top value");
+    return s + s;
+  });
+  notEqual(mySerialized.length, 0, "my serialized callaback in deserialize with changed value");
+  myDeserializedString = <string>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString, s + s, "my deserialized callback in deserialize changed value");
+  
+  mySerialized = System.Reflection.serialize(s);
+  notEqual(mySerialized.length, 0, "my serialized callaback in deserialize with changed value");
+  myDeserializedString = <string>System.Reflection.deserialize(mySerialized, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, s, "top value");
+  });
+  equal(myDeserializedString, s, "my deserialized callback in deserialize changed value");
+  mySerialized = System.Reflection.serialize(s);
+  notEqual(mySerialized.length, 0, "my serialized callaback in deserialize with changed value");
+  myDeserializedString = <string>System.Reflection.deserialize(mySerialized, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, s, "top value");
+    return s + s
+  });
+  equal(myDeserializedString, s + s, "my deserialized callback in deserialize changed value");
+  
+
+  mySerialized = System.Reflection.serialize(s, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, s, "top value");
+    return 10;
+  });
+  notEqual(mySerialized.length, 0, "my serialized callaback in serlialize and deserialize with changed value");
+  myDeserializedString = <string>System.Reflection.deserialize(mySerialized, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, 10, "top value");
+    return s
+  });
+  equal(myDeserializedString, s, "my deserialized callback in serlialize and deserialize changed value");
+  
+  var a = ["ciao1", "miao1"];
+  mySerialized = System.Reflection.serialize(a, (key, value) => {
+    equal(key, "", "top layer");
+    equal(value, a, "top value");
+    return s;
+  });
+  notEqual(mySerialized.length, 0, "my array serialized callaback in serlialize with changed value");
+  myDeserializedString = <string>System.Reflection.deserialize(mySerialized);
+  equal(myDeserializedString, s, "my array deserialized callback in serlialize changed value");
+  
+  var i = 0;
+  mySerialized = System.Reflection.serialize(a, (key, value) => {
+    if (!key) {
+      equal(key, "", "top layer a");
+      equal(value, a, "top value");
+    }
+    else {
+      equal(key, "." + i, "top layer b");
+      equal(value, a[i++], "top value");
+      return s;
+    }
+  });
+  
+  var i = 0;
+  notEqual(mySerialized.length, 0, "my serialized callaback in serlialize and deserialize with changed value");
+  var myDeserializedArray = <string>System.Reflection.deserialize(mySerialized, (key, value) => {
+    if (!key) {
+      equal(key, "", "top layer c");
+      equal(value.length, 2, "top value");
+      equal(value[0], a[0], "top value");
+      equal(value[1], a[1], "top value");
+    }
+    else {
+      equal(key, i, "top layer d");
+      equal(value, s, "top value");
+      return a[i++];
+    }
+  });
+  equal(myDeserializedArray.length, 2, "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[0], a[0], "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[1], a[1], "my deserialized callback in serlialize and deserialize changed value");
+  
+  function arrayaccess(array: any, path: string): any {
+    if (!(array && path && path.length))
+      return array;
+    var calls = path.match(/\.\d+/g)
+    for (var i = 0; i < calls.length; i++)
+      array = array[calls[i].substr(1)];
+    return array;
+  }
+
+  var aa = [["ciao1", "miao1"], ["ciao2", "miao2"]];
+  mySerialized = System.Reflection.serialize(aa, (key, value) => {
+    if (!key) {
+      equal(key, "", "top layer a");
+      equal(value, aa, "top value");
+    }
+    else 
+      equal(value, arrayaccess(aa, key), "top value");
+  });
+  notEqual(mySerialized.length, 0, "my serialized callaback in serlialize and deserialize with changed value");
+  var myDeserializedArray = <string>System.Reflection.deserialize(mySerialized, (key, value) => {
+    if (key="") {
+      equal(key, "", "top layer c");
+      equal(value, myDeserializedArray, "top value");
+    }
+  });
+  equal(myDeserializedArray.length, 2, "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[0][0], aa[0][0], "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[0][1], aa[0][1], "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[1][0], aa[1][0], "my deserialized callback in serlialize and deserialize changed value");
+  equal(myDeserializedArray[1][1], aa[1][1], "my deserialized callback in serlialize and deserialize changed value");
+
+  ok(true);
+
+
 });
 
 
