@@ -20,15 +20,21 @@ with this features:
    retrocycling, including arrays 
 3. serializes/deserializes JavaScript standard Date and RegExp
 4. Retypes/Reprototypes any user defined JavaScript object
-5. use of standard JSON.stringify and JSON.parse
-6. written in strong typed TypeScript
+5. possible to define user callbacks for change/extend the implemented
+   way of serialization/deserialization
+6. support to serialize undefined values
+7. use of standard JSON.stringify and JSON.parse
+8. written in strong typed TypeScript
+9. NO USE OF EVAL!
+10. Performance and resource use kept in mind.
 
 * Description *
 
 1. By including the Reflection.js file in your code you will be be able to:
-1.1 serialize any cyclic object with any property type with: 
+1.1 serialize any cyclic (or not) object with any property type with: 
     var serializedString = System.Reflection.serialize(any);
-2.1 deserialize to turn back to your original object with: 
+2.1 deserialize any standard JSON or any decycled object to turn back to
+    your original object with: 
     var deserialiazedObject = System.Reflection.deserialize(anyJSONstring);
 
 2. If you want also retype your objects:
@@ -46,27 +52,64 @@ with this features:
    names or functions. So you need to use the >2 argument method/function
    either for serialize or deserialize, just once.
 
-4. User defined classes/functions not specified/found at least one time 
+5. User defined classes/functions not specified/found at least one time 
    either during serialization or deserialiazation process are treated as 
    Objects, preserving cycling/decycling. 
 
-5. Caching can be done when desidered by:
-5.1.  Cache of modules/functions:
+6. User callback can be inserted both during serialization process to return
+   any other value should be return in the final JSON:
+6.1    var typedSerializedString = System.Reflection.serialize(anyTypedOrNotTypedObject, function callback(key, value) { 
+                                     ...
+                                     return undefined | anyvalue
+                                   }, ...modulenamepath)
+   or user callback can be inserted during deserialization process to return
+   any other value should be return in the final object:
+6.2    var typedSerializedString = System.Reflection.deserialize(anyTypedOrNotTypedObject, function callback(key, value) { 
+                                     ...
+                                     return undefined | anyvalue
+                                   }, ...modulenamepath)
+   User code will executes first of all other code and only cyclic/retrocyclic
+   feature is preserved. Do not returning a value or returning undefined will 
+   continue with standard process of the original value read.
+
+7. Caching can be done when desidered by:
+7.1.  Cache of modules/functions:
       System.Reflection.cacheNameSpaces(...moduleNameOrStringName)
-5.2   Cache of classes/objectFunctions
+7.2   Cache of classes/objectFunctions
       System.Reflection.cacheTypes(...classesOrFunctionName)
 
-6. You can get the class/protoype name by calling:
+8. You can get the class/protoype name by calling:
    System.Reflection.getClassName(anyObject);
 
-7. To avoid serialization of object properties start their name with a
+9. To avoid serialization of object properties start their name with a
    '$' character. Example: $NotSerialized = "anyValueyouWant"
 
-8. NO USE OF EVAL!
+10. By default undefined values do not seriualze as for standard JSON
+    behaviour thus default is Syste.Reflection.IncludeUndefined = false
+    If you want to serialize even undefined values set it to true and
+    undefined properties or array values are serialized and
+    deserialized too
 
-9. The code is written with performance and reducing resource use in mind. 
+11. Cyclic objects are mapped by use of incremental unique id inside
+    the resulting JSON by assigning them sequentially when parsing objects.
+    Elements in arrays are tracked by use of a XPath-dot-style like 
+    expression (formulation wit use of regular expression 
+    syntax):
+    (ObjectUIniqueID)*.((ObjectPropertyName)*.(InArrayPositionIndex)*)*
+    ObjectUniqueID: the object unique numeric identifier or nothing 
+                    if it is a top level array 
+    ObjectPropertyName: is the name of the object property if the
+                        array variable is part of an object
+    InArrayPositionIndex: is the position of the array element
+    By use of serialization callback the key will be returned according
+    to this syntax.
+    By use of deserialization callback the returned key holds only
+    "" blank values for objects, object property names o array index position
+    without any other path style information.
+    Both returns an empty string "" for the top level object or array 
 
-10. Qunit Test code is provided.
+12. Qunit Test code is provided. Consult the .Test. files to see
+    extended use examples.
 
 
 
@@ -77,8 +120,11 @@ The full TypeScript API is:
 Reflection.js
   System.
     Reflection.
+      IncludeUndefined: boolean = false  // set to true if undefined values should be serialized too
       serialize(obj: any, ...namespaces: string[]): string  // returns JSON
-      deserialize(s: string, ...namespaces: string[]): any  // returns Object
+      serialize(obj: any, callback: (key: string, value: any) => any | void, ...namespaces: string[]): string  // returns JSON
+      deserialize(s: string, ...namespaces: string[]): any  // returns a retyped object
+      deserialize(s: string, callback: (key: string, value: any) => any | void, ...namespaces: string[]): string  // returns a retyped object
       chacheNameSpace(...namespaces: string[])
       chacheType(...prototype: any): string  // returns class name
       getClassName(obj: any): string  // returns class name
@@ -88,8 +134,9 @@ The full JavaScript API is:
 Reflection.js
   System.
     Reflection.
-      serialize(obj, ...dotStringPathsToFunctions)  // returns JSON
-      deserialize(s, ...dotStringPathsToFunctions)  // returns Object with prototype set
+      IncludeUndefined = false  // set to true if undefined values should be serialized too
+      serialize(obj, ...firstCallbackORANDdotStringPathsToFunctions)  // returns JSON
+      deserialize(s, ...firstCallbackORANDdotStringPathsToFunctions)  // returns Object with prototype set
       chacheNameSpace(...dotStringPathsToFunctions)
       chacheType(...prototype)  // returns class name
       getClassName(obj)  // returns class name
@@ -114,22 +161,24 @@ module A.B.C {
    }
 }
 
-...anywhere in your code...
+// BEGIN EXAMPLE1: anywhere in your code...
 var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
 var s = System.Reflection.serialize(MyObj, "A.B.C");
 var myobj = System.Reflection.deserialize(s);
+// END EXAMPLE1
 
-...or also anywhere in your code...
+// BEGIN EXAMPLE2: ...or also anywhere in your code...
 var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
 System.Reflection.cacheNameSpace("A.B.C");
-....
-
+.... any other code
 var s = System.Reflection.serialize(MyObj);
 var myobj = System.Reflection.deserialize(s);
+// END EXAMPLE2
+
 
 ** JavaScript use example **
 // define any your object
@@ -167,9 +216,7 @@ var MyObj = new A.B.C.MyClass();
 MyObj.d = MyObj;
 MyObj.f.push(MyObj);
 System.Reflection.cacheNameSpaces("a.b.c");
-
 //....any other code
-
 var s = System.Reflection.serialize(MyObj);
 var myobj = System.Reflection.deserialize(s);
 // END EXAMPLE2
