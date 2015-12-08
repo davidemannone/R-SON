@@ -108,6 +108,9 @@ with this features:
     without any other path style information.
     Both returns an empty string "" for the top level object or array 
 
+13. All symbols and token used can be changed if necessary by setting
+    property values.
+
 12. Qunit Test code is provided. Consult the .Test. files to see
     extended use examples.
 
@@ -120,7 +123,6 @@ The full TypeScript API is:
 Reflection.js
   System.
     Reflection.
-      IncludeUndefined: boolean = false  // set to true if undefined values should be serialized too
       serialize(obj: any, ...namespaces: string[]): string  // returns JSON
       serialize(obj: any, callback: (key: string, value: any) => any | void, ...namespaces: string[]): string  // returns JSON
       deserialize(s: string, ...namespaces: string[]): any  // returns a retyped object
@@ -128,18 +130,35 @@ Reflection.js
       chacheNameSpace(...namespaces: string[])
       chacheType(...prototype: any): string  // returns class name
       getClassName(obj: any): string  // returns class name
-    
-    
+      // behaviour settings
+      IncludeUndefined: boolean = false  // set to true if undefined values should be serialized too
+      // symbols and tokens used if changed they are used instead
+      NOTSERIALIZESTARTDELIMITER = '$';
+      OBJECTIDTOKEN = "$id";
+      OBJECTTYPETOKEN = "$type";
+      DATETOKEN = "$date";
+      REGEXPTOKEN = "$regex";
+      UNDEFINEDTOKEN = "$undef";
+      ARRAYPATHDELIMITER = '.';
+
 The full JavaScript API is:
 Reflection.js
   System.
     Reflection.
-      IncludeUndefined = false  // set to true if undefined values should be serialized too
       serialize(obj, ...firstCallbackORANDdotStringPathsToFunctions)  // returns JSON
       deserialize(s, ...firstCallbackORANDdotStringPathsToFunctions)  // returns Object with prototype set
       chacheNameSpace(...dotStringPathsToFunctions)
       chacheType(...prototype)  // returns class name
       getClassName(obj)  // returns class name
+      IncludeUndefined = false  // set to true if undefined values should be serialized too
+      // symbols and tokens used if changed they are used instead
+      NOTSERIALIZESTARTDELIMITER = '$';
+      OBJECTIDTOKEN = "$id";
+      OBJECTTYPETOKEN = "$type";
+      DATETOKEN = "$date";
+      REGEXPTOKEN = "$regex";
+      UNDEFINEDTOKEN = "$undef";
+      ARRAYPATHDELIMITER = '.';
  
 
 * Examples *
