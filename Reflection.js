@@ -1,9 +1,95 @@
+/*
+    Reflection.js
+    2015-12-08
+
+    The MIT License (MIT)
+  
+    Copyright (c) 2015 Davide Mannone
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
 var System;
 (function (System) {
     var Reflection = (function () {
         function Reflection() {
         }
-        // PUBLIC: caching of function paths
+        Reflection.serialize = function (obj) {
+            var callbackandnamespace = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                callbackandnamespace[_i - 1] = arguments[_i];
+            }
+            var callback;
+            if (callbackandnamespace && callbackandnamespace.length > 0) {
+                if (typeof callbackandnamespace[0] == "function")
+                    callback = callbackandnamespace.shift();
+                Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+            }
+            return JSON.stringify(Reflection.decycle(obj, callback));
+        };
+        Reflection.deserialize = function (s) {
+            var callbackandnamespace = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                callbackandnamespace[_i - 1] = arguments[_i];
+            }
+            var callback;
+            if (callbackandnamespace && callbackandnamespace.length > 0) {
+                if (typeof callbackandnamespace[0] == "function")
+                    callback = callbackandnamespace.shift();
+                Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+            }
+            //return Reflection._deserialize(Reflection.retype(JSON.parse(s)));
+            return Reflection.retrocycle(JSON.parse(s, function (k, v) {
+                if (callback) {
+                    var uservalue = callback(k, v);
+                    if (uservalue != undefined)
+                        return uservalue;
+                }
+                if (v && typeof v == "object")
+                    if (v[Reflection.OBJECTTYPETOKEN]) {
+                        var dt = Reflection.decacheType(v[Reflection.OBJECTTYPETOKEN]);
+                        if (dt) {
+                            v.__proto__ = dt;
+                        }
+                        delete v[Reflection.OBJECTTYPETOKEN];
+                    }
+                    else if (v[Reflection.DATETOKEN])
+                        return new Date(v[Reflection.DATETOKEN]);
+                    else if (v[Reflection.REGEXPTOKEN]) {
+                        var regexp = v[Reflection.REGEXPTOKEN].match(/\/(.*)\/(.*)?/);
+                        regexp.shift();
+                        return RegExp.apply(null, regexp);
+                    }
+                return v;
+            }));
+        };
+        // returns class/function name
+        Reflection.getClassName = function (obj) {
+            if (!obj)
+                return "undefined";
+            var str = (obj.prototype ? obj.prototype.constructor : obj.constructor).toString();
+            var cname = str.match(/function\s(\w*)/)[1];
+            return ["", "anonymous", "Anonymous"].indexOf(cname) > -1 ? "Function" : cname;
+        };
+        //public static getClassName(str: string = ""): string {  // alternative use this§: is slightly faster
+        //  return str.substring(str.indexOf("n ") + 2, str.indexOf("("));
+        //}
+        // caches namespace/module
         Reflection.cacheNameSpace = function () {
             var namespaces = [];
             for (var _i = 0; _i < arguments.length; _i++) {
@@ -18,18 +104,18 @@ var System;
                     Reflection.cachedNameSpaces[elem] = objtype;
             }
         };
-        // PUBLIC: caching of object prototypes
+        // caches classes
         Reflection.cacheType = function (proto) {
             if (!proto)
                 return;
             if (typeof proto == "string") {
-                // allready cached
+                // already cached
                 if (Reflection.cachedTypes[proto])
                     return proto;
                 var classname = proto.substr(proto.lastIndexOf('.') + 1, proto.length);
                 if (!classname)
                     return null;
-                // not yet cahed    
+                // not already cached      
                 for (var ns in Reflection.cachedNameSpaces) {
                     var ref = Reflection.cachedNameSpaces[ns];
                     for (var cls in ref) {
@@ -49,13 +135,13 @@ var System;
                 if (!classname || classname == "Object")
                     return null;
                 var path = null;
-                // allready cached
+                // already cached
                 for (path in Reflection.cachedTypes)
                     if (Reflection.cachedTypes[path] === proto.__proto__) {
                         return path;
                         break;
                     }
-                // not yet cached      
+                // not already cached   
                 for (var ns in Reflection.cachedNameSpaces) {
                     var ref = Reflection.cachedNameSpaces[ns];
                     for (var cls in ref) {
@@ -70,70 +156,60 @@ var System;
             }
             return null;
         };
-        // PRIVATE: decaching of function paths
-        Reflection.decacheType = function (classpath) {
-            if (!classpath)
-                return null;
-            if (Reflection.cachedTypes[classpath] != undefined
-                || Reflection.cacheType(classpath) == classpath)
-                return Reflection.cachedTypes[classpath];
-            return null;
-        };
-        // PUBLIC: gets object protoype name
-        Reflection.getClassName = function (obj) {
-            if (!obj)
-                return "undefined";
-            var str = (obj.prototype ? obj.prototype.constructor : obj.constructor).toString();
-            var cname = str.match(/function\s(\w*)/)[1];
-            return ["", "anonymous", "Anonymous"].indexOf(cname) > -1 ? "Function" : cname;
-        };
-        // PUBLIC: serializes an object
-        Reflection.serialize = function (obj) {
-            var namespaces = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                namespaces[_i - 1] = arguments[_i];
-            }
-            Reflection.cacheNameSpace.apply(this, namespaces);
-            return JSON.stringify(Reflection.decycle(obj));
-        };
-        // PRIVATE: decycles an object
-        Reflection.decycle = function (value, ret, map, keys, lastname, seq) {
+        Reflection.decycle = function (value, callback, ret, map, keys, lastname) {
             if (ret === void 0) { ret = null; }
             if (map === void 0) { map = []; }
             if (keys === void 0) { keys = []; }
-            if (lastname === void 0) { lastname = "."; }
-            if (seq === void 0) { seq = 0; }
+            if (lastname === void 0) { lastname = ""; }
+            if (ret == null && callback) {
+                var uservalue = callback("", value);
+                if (uservalue != undefined)
+                    return uservalue;
+            }
             if (value && typeof value == 'object')
                 if (value instanceof Date)
-                    return { $date: value.toJSON() };
+                    return Reflection.createSimpleToken(Reflection.DATETOKEN, value.toJSON());
                 else if (value instanceof RegExp)
-                    return { $regex: value.toString() };
+                    return Reflection.createSimpleToken(Reflection.REGEXPTOKEN, value.toString());
                 else {
                     if (ret == null) {
                         Reflection.seq = -1;
-                        if (value instanceof Array)
-                            ret = [];
-                        else
-                            ret = {};
+                        ret = (value instanceof Array) ? [] : {};
                     }
                     var i = 0, len_i = map.length;
                     for (; i < len_i && map[i] !== value; i++)
                         ;
                     if (i < len_i)
                         return { $ref: keys[i] };
+                    //var index = map.indexOf(value);  // could be used instead of before but do not use it: to 3 times slower!!!!!!
+                    //if (index >= 0)
+                    //  return { $ref: keys[index] };
                     if (value instanceof Array) {
                         if (value.length > 0) {
                             map.push(value);
-                            keys.push(seq + '.' + lastname);
+                            keys.push((lastname) ? lastname : Reflection.ARRAYPATHDELIMITER);
+                            lastname += Reflection.ARRAYPATHDELIMITER;
                             for (var i = 0, len_i = value.length; i < len_i; i++) {
                                 var value_i = value[i];
-                                if (value_i && typeof value_i == "object")
+                                if (callback) {
+                                    var uservalue = callback(lastname + i, value_i);
+                                    if (uservalue != undefined) {
+                                        ret[i] = uservalue;
+                                        continue;
+                                    }
+                                }
+                                if (value_i == undefined) {
+                                    if (Reflection.IncludeUndefined)
+                                        ret.push({ $undef: 1 });
+                                    continue;
+                                }
+                                if (typeof value_i == "object")
                                     if (value_i instanceof Date)
-                                        ret[i] = { $date: value_i.toJSON() };
+                                        ret[i] = Reflection.createSimpleToken(Reflection.DATETOKEN, value_i.toJSON());
                                     else if (value_i instanceof RegExp)
-                                        ret[i] = { $regex: value_i.toString() };
+                                        ret[i] = Reflection.createSimpleToken(Reflection.REGEXPTOKEN, value_i.toString());
                                     else
-                                        ret[i] = Reflection.decycle(value_i, (value_i instanceof Array) ? [] : {}, map, keys, lastname + '.' + i, seq);
+                                        ret[i] = Reflection.decycle(value_i, callback, (value_i instanceof Array) ? [] : {}, map, keys, lastname + i);
                                 else
                                     ret.push(value_i);
                             }
@@ -142,86 +218,108 @@ var System;
                     else {
                         Reflection.seq++;
                         map.push(value);
-                        keys.push(ret["$id"] = Reflection.seq.toString());
+                        keys.push(ret[Reflection.OBJECTIDTOKEN] = Reflection.seq.toString());
                         var vp = Reflection.cacheType(value);
                         if (vp)
-                            ret["$type"] = vp;
-                        for (var name in value) 
-                            if (name[0] != '$') {
+                            ret[Reflection.OBJECTTYPETOKEN] = vp;
+                        for (var name in value) {
+                            if (callback) {
+                                var uservalue = callback(name, value);
+                                if (uservalue != undefined) {
+                                    ret[name] = uservalue;
+                                    continue;
+                                }
+                            }
+                            if (name[0] != Reflection.NOTSERIALIZESTARTDELIMITER) {
                                 var property = value[name];
-                                if (property && typeof property == "object")
+                                if (property == undefined) {
+                                    if (Reflection.IncludeUndefined)
+                                        ret[name] = ({ $undef: 1 });
+                                    continue;
+                                }
+                                if (typeof property == "object")
                                     if (property instanceof Date)
-                                        ret[name] = { $date: property.toJSON() };
+                                        ret[name] = Reflection.createSimpleToken(Reflection.DATETOKEN, property.toJSON());
                                     else if (property instanceof RegExp)
-                                        ret[name] = { $regex: property.toString() };
+                                        ret[name] = Reflection.createSimpleToken(Reflection.REGEXPTOKEN, property.toString());
+                                    else if (property instanceof Array)
+                                        ret[name] = Reflection.decycle(property, callback, [], map, keys, Reflection.seq + Reflection.ARRAYPATHDELIMITER + name);
                                     else
-                                        ret[name] = Reflection.decycle(property, (property instanceof Array) ? [] : {}, map, keys, name, Reflection.seq);
+                                        ret[name] = Reflection.decycle(property, callback, {}, map, keys, name);
                                 else
                                     ret[name] = property;
                             }
+                        }
                     }
                     return ret;
                 }
-            return value;
+            else if (value == undefined && Reflection.IncludeUndefined)
+                return { $undef: 1 };
+            else
+                return value;
         };
-        // PUBLIC: deseriale a JSON string
-        Reflection.deserialize = function (s) {
-            var namespaces = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                namespaces[_i - 1] = arguments[_i];
-            }
-            Reflection.cacheNameSpace.apply(this, namespaces);
-            return Reflection.retrocycle(JSON.parse(s, function (k, v) {
-                if (v && typeof v == "object")
-                    if (v.$type) {
-                        var dt = Reflection.decacheType(v.$type);
-                        if (dt) {
-                            v.__proto__ = dt;
-                        }
-                        delete v.$type;
-                    }
-                    else if (v.$date)
-                        return new Date(v.$date);
-                    else if (v.$regex) {
-                        var regexp = v.$regex.match(/\/(.*)\/(.*)?/);
-                        regexp.shift();
-                        return RegExp.apply(null, regexp);
-                    }
-                return v;
-            }));
-        };
-        // PRIVATE: retrocycles an object
-        Reflection.retrocycle = function (value, map, lastname, lastseq) {
+        // does retrocycling of reflection cycled objects
+        Reflection.retrocycle = function (value, map, lastname) {
             if (map === void 0) { map = {}; }
-            if (lastname === void 0) { lastname = "."; }
-            if (lastseq === void 0) { lastseq = "0"; }
-            if (value && typeof value == 'object') {
+            if (lastname === void 0) { lastname = ""; }
+            if (value && typeof value == 'object')
                 if (value instanceof Array) {
-                    map[lastseq + '.' + lastname] = value;
+                    map[(lastname) ? lastname : Reflection.ARRAYPATHDELIMITER] = value;
                     for (var i = 0, len_i = value.length; i < len_i; i++) {
                         var value_i = value[i];
                         if (value_i && typeof value_i == "object")
-                            value[i] = Reflection.retrocycle(value_i, map, lastname + '.' + i, lastseq);
+                            value[i] = Reflection.retrocycle(value_i, map, lastname + Reflection.ARRAYPATHDELIMITER + i);
                     }
                 }
                 else if (value.$ref)
-                    value = map[value.$ref];
-                else
+                    return map[value.$ref];
+                else if (value[Reflection.UNDEFINEDTOKEN])
+                    return undefined;
+                else if (value[Reflection.OBJECTIDTOKEN] != undefined) {
+                    map[value[Reflection.OBJECTIDTOKEN]] = value;
                     for (var name in value) {
                         var property = value[name];
                         if (property && typeof property == "object")
-                            if (value.$id != undefined) {
-                                map[value.$id] = value;
-                                value[name] = Reflection.retrocycle(property, map, name, value.$id);
-                                delete value.$id;
-                            }
-                            else
-                                value[name] = Reflection.retrocycle(property, map, name);
+                            value[name] = Reflection.retrocycle(property, map, value[Reflection.OBJECTIDTOKEN] + Reflection.ARRAYPATHDELIMITER + name);
+                        else
+                            value[name] = Reflection.retrocycle(property, map, name);
                     }
-            }
+                    delete value[Reflection.OBJECTIDTOKEN];
+                }
             return value;
         };
-        // PRIVATE: search for paths
+        // does retyping of object: NOT USED ANYMORE 
+        // instead used standard JSON.stringify that seems to have same performance
+        Reflection.retype = function (obj) {
+            if (obj && typeof obj == "object")
+                for (var propr in obj) {
+                    var elem = obj[propr];
+                    if (elem) {
+                        if (elem instanceof Array)
+                            for (var i = 0, len_i = elem.length; i < len_i; i++)
+                                Reflection.retype(elem[i]);
+                        else
+                            Reflection.retype(elem);
+                    }
+                    else if (propr == Reflection.OBJECTTYPETOKEN) {
+                        var dt = Reflection.decacheType(elem[Reflection.OBJECTTYPETOKEN]);
+                        if (dt)
+                            obj.__proto__ = dt;
+                        delete obj[Reflection.OBJECTTYPETOKEN];
+                    }
+                }
+            return obj;
+        };
+        // uncaches a class
+        Reflection.decacheType = function (classpath) {
+            if (!classpath)
+                return null;
+            if (Reflection.cachedTypes[classpath] != undefined
+                || Reflection.cacheType(classpath) == classpath)
+                return Reflection.cachedTypes[classpath];
+            return null;
+        };
+        // finds type path
         Reflection.checkCallPath = function (scope, path) {
             for (var i = 0, len_i = path.length; i < len_i; i++) {
                 scope = scope[path[i]];
@@ -230,8 +328,27 @@ var System;
             }
             return scope;
         };
-        Reflection.cachedNameSpaces = {}; 
+        // creates serialization token
+        Reflection.createSimpleToken = function (symbol, value) {
+            var ret = {};
+            ret[symbol] = value;
+            return ret;
+        };
+        // PUBLIC REGION:
+        // used tokens: by change it you can choose custom symbols/coding
+        Reflection.NOTSERIALIZESTARTDELIMITER = '$';
+        Reflection.OBJECTIDTOKEN = "$id";
+        Reflection.OBJECTTYPETOKEN = "$type";
+        Reflection.DATETOKEN = "$date";
+        Reflection.REGEXPTOKEN = "$regex";
+        Reflection.UNDEFINEDTOKEN = "$undef";
+        Reflection.ARRAYPATHDELIMITER = '.';
+        Reflection.IncludeUndefined = false; // true for preserve undefined values from be dropped by serialization
+        // PRIVATE REGION:
+        // cached namespaces/modules and types
+        Reflection.cachedNameSpaces = {};
         Reflection.cachedTypes = {};
+        // does decycling
         Reflection.seq = 0;
         return Reflection;
     })();
