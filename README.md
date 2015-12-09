@@ -52,6 +52,8 @@ with this features:
    names or functions. So you need to use the >2 argument method/function
    either for serialize or deserialize, just once.
 
+4. By default at least class/function definition is searched in window
+
 5. User defined classes/functions not specified/found at least one time 
    either during serialization or deserialiazation process are treated as 
    Objects, preserving cycling/decycling. 
@@ -111,7 +113,7 @@ with this features:
 13. All symbols and token used can be changed if necessary by setting
     property values.
 
-12. Qunit Test code is provided. Consult the .Test. files to see
+14. Qunit Test code is provided. Consult the .Test. files to see
     extended use examples.
 
 
