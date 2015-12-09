@@ -239,9 +239,9 @@ module System {
                     continue;
                   }
                 }
-                if (value_i == undefined) {
+                if (value_i === undefined) {
                   if (Reflection.IncludeUndefined)
-                    ret.push({ $undef: 1 });
+                    ret.push(Reflection.createSimpleToken(Reflection.UNDEFINEDTOKEN, 1));
                   continue;
                 }
                 if (typeof value_i == "object")
@@ -274,9 +274,9 @@ module System {
               }
               if (name[0] != Reflection.NOTSERIALIZESTARTDELIMITER) {
                 var property = value[name];
-                if (property == undefined) {
+                if (property === undefined) {
                   if (Reflection.IncludeUndefined)
-                    ret[name] = ({ $undef: 1 });
+                    ret[name] = Reflection.createSimpleToken(Reflection.UNDEFINEDTOKEN, 1);
                   continue;
                 }
                 if (typeof property == "object")
@@ -295,8 +295,8 @@ module System {
           }
           return ret;
         }
-      else if (value == undefined && Reflection.IncludeUndefined)
-        return { $undef: 1 };
+      else if (value === undefined && Reflection.IncludeUndefined)
+        return Reflection.createSimpleToken(Reflection.UNDEFINEDTOKEN, 1);
       else
         return value;
     }
