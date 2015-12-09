@@ -135,6 +135,7 @@ Reflection.js
       // symbols and tokens used if changed they are used instead
       NOTSERIALIZESTARTDELIMITER = '$';
       OBJECTIDTOKEN = "$id";
+      OBJECTREFERENCETOKEN = "$ref";
       OBJECTTYPETOKEN = "$type";
       DATETOKEN = "$date";
       REGEXPTOKEN = "$regex";
