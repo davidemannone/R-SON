@@ -180,10 +180,10 @@ var System;
                     for (; i < len_i && map[i] !== value; i++)
                         ;
                     if (i < len_i)
-                        return { $ref: keys[i] };
+                        return Reflection.createSimpleToken(Reflection.OBJECTREFERENCETOKEN, keys[i]);
                     //var index = map.indexOf(value);  // could be used instead of before but do not use it: to 3 times slower!!!!!!
                     //if (index >= 0)
-                    //  return { $ref: keys[index] };
+                    //  return Reflection.createSimpleToken(Reflection.OBJECTREFERENCETOKEN, keys[index]); 
                     if (value instanceof Array) {
                         if (value.length > 0) {
                             map.push(value);
@@ -271,8 +271,8 @@ var System;
                             value[i] = Reflection.retrocycle(value_i, map, lastname + Reflection.ARRAYPATHDELIMITER + i);
                     }
                 }
-                else if (value.$ref)
-                    return map[value.$ref];
+                else if (value[Reflection.OBJECTREFERENCETOKEN])
+                    return map[value[Reflection.OBJECTREFERENCETOKEN]];
                 else if (value[Reflection.UNDEFINEDTOKEN])
                     return undefined;
                 else if (value[Reflection.OBJECTIDTOKEN] != undefined) {
@@ -338,6 +338,7 @@ var System;
         // used tokens: by change it you can choose custom symbols/coding
         Reflection.NOTSERIALIZESTARTDELIMITER = '$';
         Reflection.OBJECTIDTOKEN = "$id";
+        Reflection.OBJECTREFERENCETOKEN = "$ref";
         Reflection.OBJECTTYPETOKEN = "$type";
         Reflection.DATETOKEN = "$date";
         Reflection.REGEXPTOKEN = "$regex";
