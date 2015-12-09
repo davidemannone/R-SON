@@ -80,11 +80,15 @@ var System;
         };
         // returns class/function name
         Reflection.getClassName = function (obj) {
-            if (!obj)
-                return "undefined";
-            var str = (obj.prototype ? obj.prototype.constructor : obj.constructor).toString();
-            var cname = str.match(/function\s(\w*)/)[1];
-            return ["", "anonymous", "Anonymous"].indexOf(cname) > -1 ? "Function" : cname;
+            var objtype = typeof obj;
+            if (objtype != "object" && objtype != "function")
+                return undefined;
+            var cname = (obj.prototype ? obj.prototype.constructor : obj.constructor).toString().match(/function\s(\w*)/);
+            return (cname && cname.length > 1) ? cname[1] : undefined;
+            //if (!cname || cname.length < 1)
+            //  return "undefined";
+            //cname = cname[1];
+            //      return ["", "anonymous", "Anonymous"].indexOf(cname) > -1 ? undefined : cname;
         };
         //public static getClassName(str: string = ""): string {  // alternative use this§: is slightly faster
         //  return str.substring(str.indexOf("n ") + 2, str.indexOf("("));
@@ -97,7 +101,7 @@ var System;
             }
             for (var i = 0, len_i = namespaces.length; i < len_i; i++) {
                 var elem = namespaces[i];
-                if (elem in Reflection.cachedNameSpaces)
+                if (typeof Reflection.cachedNameSpaces[elem] != 'undefined')
                     continue;
                 var objtype = Reflection.checkCallPath(window, elem.split('.'));
                 if (objtype)
@@ -127,6 +131,14 @@ var System;
                         }
                     }
                 }
+                // is in window (the root)?
+                for (var cls in window) {
+                    var tempObj = window[cls];
+                    if (tempObj && Reflection.getClassName(tempObj) == classname) {
+                        Reflection.cachedTypes[classname] = tempObj.prototype;
+                        return classname;
+                    }
+                }
             }
             else {
                 if (typeof proto != "object")
@@ -151,6 +163,14 @@ var System;
                             Reflection.cachedTypes[path] = proto.__proto__;
                             return path;
                         }
+                    }
+                }
+                // is in window (the root)?
+                for (var cls in window) {
+                    var tempObj = window[cls];
+                    if (tempObj && tempObj.prototype == proto.__proto__) {
+                        Reflection.cachedTypes[path] = proto.__proto__;
+                        return classname;
                     }
                 }
             }
