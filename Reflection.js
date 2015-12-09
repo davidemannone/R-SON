@@ -85,9 +85,6 @@ var System;
                 return undefined;
             var cname = (obj.prototype ? obj.prototype.constructor : obj.constructor).toString().match(/function\s(\w*)/);
             return (cname && cname.length > 1) ? cname[1] : undefined;
-            //if (!cname || cname.length < 1)
-            //  return "undefined";
-            //cname = cname[1];
             //      return ["", "anonymous", "Anonymous"].indexOf(cname) > -1 ? undefined : cname;
         };
         //public static getClassName(str: string = ""): string {  // alternative use this§: is slightly faster
@@ -375,3 +372,4 @@ var System;
     })();
     System.Reflection = Reflection;
 })(System || (System = {}));
+//# sourceMappingURL=Reflection.js.map
