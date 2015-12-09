@@ -1,5 +1,3 @@
-/// <reference path="../_references.ts" />
-
 
 QUnit.module('Reflection');
 
@@ -15,6 +13,7 @@ module NameSpace {
     constructor(s: string, d: Date, r: RegExp) { this.Name = s; this.Date = d; this.RegEx = r; this.$NotSerialized = s; }
   }
 }
+
 
 test('standard JSON', () => {
   var json = { str: "ciao", num: 1, array: [1, "ciao", { str: "ciao" }, [1, "ciao"], null ],  obj: {str: "ciao", num: 1}, null: null };
@@ -182,6 +181,31 @@ test('arrays', () => {
   equal(myDeserializedRegString[1], s[1], "my deserialized regular expression 0");
   equal(myDeserializedRegString[2], s[2], "my deserialized regular expression 0");
   System.Reflection.IncludeUndefined = false;
+
+
+
+});
+
+function Class(str, n) {
+  this.str = str;
+  this.n = n;
+}
+Class.prototype.get = function () {
+  return this.str + this.n.toString();
+}
+
+
+test('serializer of window classes', () => {
+  var str = "ciao";
+  var n = 1;
+  var obj = new Class(str, n);
+
+  var mySerialized = System.Reflection.serialize(obj);
+  notEqual(mySerialized.length, 0, "my serialized");
+  var myDeserialized = <any>System.Reflection.deserialize(mySerialized)
+  
+  equal(myDeserialized.get(), obj.get(), "same class obj");
+  ok(true);
 });
 
 test('serializer simple classes', () => {
@@ -342,6 +366,7 @@ test('serializer simple classes from serialized', () => {
 
   ok(true);
 });
+
 
 test('array of arrays', () => {
   var date = new Date();
