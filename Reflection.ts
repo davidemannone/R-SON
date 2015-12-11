@@ -49,14 +49,14 @@ module System {
     public static IncludeUndefined: boolean = false;      // true for preserve undefined values from be dropped by serialization
 
     // serializes an object
-    public static serialize(obj: any, ...namespaces: string[]): string;
-    public static serialize(obj: any, callback: (key: string, value: any) => any | void, ...namespaces: string[]): string;
+    public static serialize(obj: any, ...namespaces: (string | Object)[]): string;
+    public static serialize(obj: any, callback: (key: string, value: any) => any | void, ...namespaces: (string | Object)[]): string;
     public static serialize(obj: any, ...callbackandnamespace: any[]): string {
       var callback: (key: string, value: any) => any | void;
       if (callbackandnamespace && callbackandnamespace.length > 0) {
         if (typeof callbackandnamespace[0] == "function")
           callback = callbackandnamespace.shift();
-        Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+        Reflection.cacheModule.apply(this, callbackandnamespace);
       }
       return JSON.stringify(Reflection.decycle(obj, callback));
     }
@@ -69,7 +69,7 @@ module System {
       if (callbackandnamespace && callbackandnamespace.length > 0) {
         if (typeof callbackandnamespace[0] == "function")
           callback = callbackandnamespace.shift();
-        Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+        Reflection.cacheModule.apply(this, callbackandnamespace);
       }
       //return Reflection._deserialize(Reflection.retype(JSON.parse(s)));
       return Reflection.retrocycle(JSON.parse(s, (k, v) => {
@@ -116,14 +116,19 @@ module System {
     //}
 
     // caches namespace/module
-    public static cacheNameSpace(...namespaces: string[]): void {
-      for (var i = 0, len_i = namespaces.length; i < len_i; i++) {
-        var elem = namespaces[i];
-        if (typeof Reflection.cachedNameSpaces[elem] != 'undefined')
-          continue;
-        var objtype = Reflection.checkCallPath(window, elem.split('.'));
-        if (objtype)
-          Reflection.cachedNameSpaces[elem] = objtype;
+    public static cacheModule(...moduleNames: (string | Object)[]): void {
+      for (var i = 0, len_i = moduleNames.length; i < len_i; i++) {
+        var elem = moduleNames[i];
+        var elemtype = typeof elem;
+        if (elemtype == 'string') {
+          if (typeof Reflection.cachedModules[<string>elem] != 'undefined')
+            continue;
+          var objtype = Reflection.checkCallPath(window, (<string>elem).split('.'));
+          if (objtype)
+            Reflection.cachedModules[<string>elem] = objtype;
+        }
+        else if (elemtype == 'object')
+          Reflection.cachedModules['.'] = <Object>elem;
       }
     }
     // caches classes
@@ -141,8 +146,8 @@ module System {
           return null;
 
         // not already cached      
-        for (var ns in Reflection.cachedNameSpaces) {
-          var ref = Reflection.cachedNameSpaces[ns];
+        for (var ns in Reflection.cachedModules) {
+          var ref = Reflection.cachedModules[ns];
           for (var cls in ref) {
             var tempObj = ref[cls];
             if (tempObj && Reflection.getClassName(tempObj) == classname) {
@@ -152,16 +157,6 @@ module System {
             }
           }
         }
-
-        // is in window (the root)?
-        for (var cls in window) {
-          var tempObj = <any>window[cls];
-          if (tempObj && Reflection.getClassName(tempObj) == classname) {
-            Reflection.cachedTypes[classname] = tempObj.prototype;
-            return classname;
-          }
-        }
-
       }
       else {
         if (typeof proto != "object")
@@ -173,16 +168,13 @@ module System {
 
         // already cached
         for (path in Reflection.cachedTypes)
-          if (Reflection.cachedTypes[path] === proto.__proto__) {
+          if (Reflection.cachedTypes[path] === proto.__proto__) 
             return path;
-            break;
-          }
-        // not already cached   
-        for (var ns in Reflection.cachedNameSpaces) {
-          var ref = Reflection.cachedNameSpaces[ns];
+
+        for (var ns in Reflection.cachedModules) {
+          var ref = Reflection.cachedModules[ns];
           for (var cls in ref) {
             var tempObj = ref[cls];
-
             if (tempObj && tempObj.prototype == proto.__proto__) {
               var path = ns + '.' + classname;
               Reflection.cachedTypes[path] = proto.__proto__;
@@ -190,23 +182,24 @@ module System {
             }
           }
         }
-
-        // is in window (the root)?
-        for (var cls in window) {
-          var tempObj = <any>window[cls];
-          if (tempObj && tempObj.prototype == proto.__proto__) {
-            Reflection.cachedTypes[path] = proto.__proto__;
-            return classname;
-          }
-        }
-
       }
       return null;
     }
 
+    //private static searchProto(obj: any, proto: any, path: string): string {
+    //  for (var cls in obj) {
+    //    var tempObj = <any>obj[cls];
+    //    if (tempObj && tempObj.prototype == proto) {
+    //      Reflection.cachedTypes[path] = proto;
+    //      return path;
+    //    }
+    //  }
+    //  return undefined;
+    //} 
+
     // PRIVATE REGION:
     // cached namespaces/modules and types
-    private static cachedNameSpaces: IHashTable<Function> = {};
+    private static cachedModules: IHashTable<Object> = {};
     private static cachedTypes: IHashTable<any> = {};
 
     // does decycling
