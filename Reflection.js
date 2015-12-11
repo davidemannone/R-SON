@@ -38,7 +38,7 @@ var System;
             if (callbackandnamespace && callbackandnamespace.length > 0) {
                 if (typeof callbackandnamespace[0] == "function")
                     callback = callbackandnamespace.shift();
-                Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+                Reflection.cacheModule.apply(this, callbackandnamespace);
             }
             return JSON.stringify(Reflection.decycle(obj, callback));
         };
@@ -51,7 +51,7 @@ var System;
             if (callbackandnamespace && callbackandnamespace.length > 0) {
                 if (typeof callbackandnamespace[0] == "function")
                     callback = callbackandnamespace.shift();
-                Reflection.cacheNameSpace.apply(this, callbackandnamespace);
+                Reflection.cacheModule.apply(this, callbackandnamespace);
             }
             //return Reflection._deserialize(Reflection.retype(JSON.parse(s)));
             return Reflection.retrocycle(JSON.parse(s, function (k, v) {
@@ -91,18 +91,23 @@ var System;
         //  return str.substring(str.indexOf("n ") + 2, str.indexOf("("));
         //}
         // caches namespace/module
-        Reflection.cacheNameSpace = function () {
-            var namespaces = [];
+        Reflection.cacheModule = function () {
+            var moduleNames = [];
             for (var _i = 0; _i < arguments.length; _i++) {
-                namespaces[_i - 0] = arguments[_i];
+                moduleNames[_i - 0] = arguments[_i];
             }
-            for (var i = 0, len_i = namespaces.length; i < len_i; i++) {
-                var elem = namespaces[i];
-                if (typeof Reflection.cachedNameSpaces[elem] != 'undefined')
-                    continue;
-                var objtype = Reflection.checkCallPath(window, elem.split('.'));
-                if (objtype)
-                    Reflection.cachedNameSpaces[elem] = objtype;
+            for (var i = 0, len_i = moduleNames.length; i < len_i; i++) {
+                var elem = moduleNames[i];
+                var elemtype = typeof elem;
+                if (elemtype == 'string') {
+                    if (typeof Reflection.cachedModules[elem] != 'undefined')
+                        continue;
+                    var objtype = Reflection.checkCallPath(window, elem.split('.'));
+                    if (objtype)
+                        Reflection.cachedModules[elem] = objtype;
+                }
+                else if (elemtype == 'object')
+                    Reflection.cachedModules['.'] = elem;
             }
         };
         // caches classes
@@ -117,8 +122,8 @@ var System;
                 if (!classname)
                     return null;
                 // not already cached      
-                for (var ns in Reflection.cachedNameSpaces) {
-                    var ref = Reflection.cachedNameSpaces[ns];
+                for (var ns in Reflection.cachedModules) {
+                    var ref = Reflection.cachedModules[ns];
                     for (var cls in ref) {
                         var tempObj = ref[cls];
                         if (tempObj && Reflection.getClassName(tempObj) == classname) {
@@ -126,14 +131,6 @@ var System;
                             Reflection.cachedTypes[path] = tempObj.prototype;
                             return path;
                         }
-                    }
-                }
-                // is in window (the root)?
-                for (var cls in window) {
-                    var tempObj = window[cls];
-                    if (tempObj && Reflection.getClassName(tempObj) == classname) {
-                        Reflection.cachedTypes[classname] = tempObj.prototype;
-                        return classname;
                     }
                 }
             }
@@ -146,13 +143,10 @@ var System;
                 var path = null;
                 // already cached
                 for (path in Reflection.cachedTypes)
-                    if (Reflection.cachedTypes[path] === proto.__proto__) {
+                    if (Reflection.cachedTypes[path] === proto.__proto__)
                         return path;
-                        break;
-                    }
-                // not already cached   
-                for (var ns in Reflection.cachedNameSpaces) {
-                    var ref = Reflection.cachedNameSpaces[ns];
+                for (var ns in Reflection.cachedModules) {
+                    var ref = Reflection.cachedModules[ns];
                     for (var cls in ref) {
                         var tempObj = ref[cls];
                         if (tempObj && tempObj.prototype == proto.__proto__) {
@@ -160,14 +154,6 @@ var System;
                             Reflection.cachedTypes[path] = proto.__proto__;
                             return path;
                         }
-                    }
-                }
-                // is in window (the root)?
-                for (var cls in window) {
-                    var tempObj = window[cls];
-                    if (tempObj && tempObj.prototype == proto.__proto__) {
-                        Reflection.cachedTypes[path] = proto.__proto__;
-                        return classname;
                     }
                 }
             }
@@ -362,9 +348,19 @@ var System;
         Reflection.UNDEFINEDTOKEN = "$undef";
         Reflection.ARRAYPATHDELIMITER = '.';
         Reflection.IncludeUndefined = false; // true for preserve undefined values from be dropped by serialization
+        //private static searchProto(obj: any, proto: any, path: string): string {
+        //  for (var cls in obj) {
+        //    var tempObj = <any>obj[cls];
+        //    if (tempObj && tempObj.prototype == proto) {
+        //      Reflection.cachedTypes[path] = proto;
+        //      return path;
+        //    }
+        //  }
+        //  return undefined;
+        //} 
         // PRIVATE REGION:
         // cached namespaces/modules and types
-        Reflection.cachedNameSpaces = {};
+        Reflection.cachedModules = {};
         Reflection.cachedTypes = {};
         // does decycling
         Reflection.seq = 0;
@@ -372,4 +368,3 @@ var System;
     })();
     System.Reflection = Reflection;
 })(System || (System = {}));
-//# sourceMappingURL=Reflection.js.map
